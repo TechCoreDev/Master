@@ -8,7 +8,7 @@
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f7f8fa; color: #000; }
         main { display: flex; flex-direction: row; min-height: 100vh; }
         .left-section { width: 40%; background-color: #f7f8fa; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px; }
-        .left-section img { width: 70%; height: auto; margin-bottom: 30px; }
+        .left-section img { width: 70%; height: auto; margin-bottom: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
         .device-info { display: none; background-color: #fff; padding: 15px; border-radius: 10px; width: 80%; text-align: center; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); font-weight: bold; font-size: 18px; }
         .right-section { width: 60%; padding: 50px; background-color: #fff; border-radius: 30px 0 0 30px; box-shadow: -5px 0 15px rgba(0, 0, 0, 0.05); }
         .progress-bar-container { width: 100%; margin-bottom: 30px; text-align: center; }
@@ -18,13 +18,13 @@
         .form-container, .result-container { background-color: #fff; padding: 30px; border-radius: 10px; display: none; }
         .form-container.active, .result-container.active { display: block; }
         .form-group { margin-bottom: 25px; }
-        .option-box { border: 1px solid #dcdcdc; border-radius: 10px; padding: 20px; margin-bottom: 20px; cursor: pointer; display: flex; align-items: flex-start; }
-        .option-box input { margin-right: 15px; }
-        .option-box:hover, .option-box.selected { border-color: #000; background-color: #f0f0f0; }
+        .option-box { border: 1px solid #dcdcdc; border-radius: 10px; padding: 20px; margin-bottom: 20px; cursor: pointer; text-align: center; font-size: 18px; font-weight: bold; }
+        .option-box.selected { border-color: #000; background-color: #f0f0f0; }
         select, button { width: 100%; padding: 15px; border: 1px solid #dcdcdc; border-radius: 10px; background-color: #f7f8fa; color: #000; font-size: 16px; }
         select:focus, button:focus { outline: none; border-color: #000; }
         button { background-color: #000; color: #fff; cursor: pointer; transition: background-color 0.3s ease; }
         button:hover { background-color: #333; }
+        .description { font-size: 14px; color: #555; margin-bottom: 20px; }
         @media (max-width: 992px) {
             main { flex-direction: column; }
             .left-section, .right-section { width: 100%; }
@@ -36,50 +36,54 @@
     <main>
         <div class="left-section">
             <div class="device-info" id="device-info"></div>
-            <img src="https://zupimages.net/up/25/08/h4r9.png" alt="Illustration Smartphone et Argent">
+            <img id="device-image" src="https://zupimages.net/up/25/08/h4r9.png" alt="Illustration Smartphone et Argent">
         </div>
         <div class="right-section">
             <div class="progress-bar-container">
-                <div class="progress-bar-text" id="progress-bar-text">1/4 Votre appareil</div>
+                <div class="progress-bar-text" id="progress-bar-text">1/5 Votre appareil</div>
                 <div class="progress-bar-background">
                     <div class="progress-bar-fill" id="progress-bar"></div>
                 </div>
             </div>
+
             <div class="form-container active" id="step1">
                 <h2>Quelle est la marque de votre smartphone ?</h2>
                 <div class="form-group">
                     <label>Marque :</label>
-                    <select id="brand" onchange="updateModelOptions()"></select>
+                    <select id="brand"></select>
                 </div>
                 <h3>Quel est le modèle exact de votre appareil ?</h3>
                 <div class="form-group">
-                    <select id="model" onchange="updateStorageOptions()"></select>
+                    <select id="model"></select>
                 </div>
                 <div class="form-group" id="storage-group" style="display:none;">
                     <h3>Quelle est sa capacité ?</h3>
                     <select id="storage"></select>
                 </div>
-                <button onclick="validateStep1()">Suivant</button>
+                <button onclick="validateStep(2)">Suivant</button>
             </div>
 
             <div class="form-container" id="step2">
                 <h2>Quel est l'état de l'écran ?</h2>
-                <div id="screenConditionContainer"></div>
-                <button onclick="validateStep2()">Suivant</button>
+                <div class="form-group" id="screen-conditions"></div>
+                <button onclick="validateStep(3)">Suivant</button>
             </div>
 
             <div class="form-container" id="step3">
                 <h2>Quel est l'état de la coque et du contour ?</h2>
-                <div id="bodyConditionContainer"></div>
-                <button onclick="validateStep3()">Suivant</button>
+                <div class="form-group" id="body-conditions"></div>
+                <button onclick="validateStep(4)">Suivant</button>
             </div>
 
             <div class="form-container" id="step4">
+                <h2>Capacité maximale de la batterie</h2>
+                <div class="form-group" id="battery-capacity"></div>
+                <button onclick="validateStep(5)">Suivant</button>
+            </div>
+
+            <div class="form-container" id="step5">
                 <h2>Votre appareil est-il fonctionnel ?</h2>
-                <div class="form-group">
-                    <label><input type="radio" name="functional" value="Oui"> Oui</label>
-                    <label><input type="radio" name="functional" value="Non"> Non</label>
-                </div>
+                <div class="form-group" id="functionality-status"></div>
                 <button onclick="calculateEstimate()">Voir l'estimation</button>
             </div>
 
@@ -92,23 +96,18 @@
 
     <script>
         const priceConfig = {
-            "Apple": {"iPhone 13": {storage: {128: 700, 256: 800, 512: 900}}},
-            "Samsung": {"Galaxy S21": {storage: {128: 600, 256: 700}}}
+            "Apple": {
+                "iPhone 13": {
+                    image: "https://zupimages.net/up/25/08/st84.jpg",
+                    storage: {128: 700, 256: 800, 512: 900}
+                }
+            }
         };
 
-        const screenConditions = [
-            {label: "Cassé", desc: "Écran fissuré ou non fonctionnel."},
-            {label: "État correct", desc: "Traces d’usure, écran fonctionnel."},
-            {label: "Très bon état", desc: "Micro-rayures légères."},
-            {label: "Parfait état", desc: "Aucune rayure visible."}
-        ];
-
-        const bodyConditions = [
-            {label: "Cassés", desc: "Coque fissurée ou cassée."},
-            {label: "État correct", desc: "Traces d’usure ou petits impacts."},
-            {label: "Très bon état", desc: "Micro-rayures invisibles."},
-            {label: "Parfait état", desc: "Aucune rayure."}
-        ];
+        const screenConditions = ["Cassé", "État correct", "Très bon état", "Parfait état"];
+        const bodyConditions = ["Cassés", "État correct", "Très bon état", "Parfait état"];
+        const batteryOptions = ["Plus de 85%", "Moins de 85%"];
+        const functionalityOptions = ["Fonctionnel", "Non fonctionnel"];
 
         function populateOptions(selectId, options) {
             const select = document.getElementById(selectId);
@@ -121,106 +120,95 @@
             });
         }
 
-        function updateModelOptions() {
-            const brand = document.getElementById('brand').value;
-            if (priceConfig[brand]) {
-                populateOptions('model', Object.keys(priceConfig[brand]));
-                document.getElementById('model').disabled = false;
-            }
+        function validateStep(step) {
+            const currentStep = step - 1;
+            document.getElementById(`step${currentStep}`).classList.remove('active');
+            document.getElementById(`step${step}`).classList.add('active');
+            updateProgressBar(step);
+            if (step === 2) populateConditionOptions('screen-conditions', screenConditions);
+            if (step === 3) populateConditionOptions('body-conditions', bodyConditions);
+            if (step === 4) populateConditionOptions('battery-capacity', batteryOptions);
+            if (step === 5) populateConditionOptions('functionality-status', functionalityOptions);
         }
 
-        function updateStorageOptions() {
-            const brand = document.getElementById('brand').value;
-            const model = document.getElementById('model').value;
-            if (priceConfig[brand] && priceConfig[brand][model]) {
-                populateOptions('storage', Object.keys(priceConfig[brand][model].storage));
-                document.getElementById('storage-group').style.display = 'block';
-            }
-        }
-
-        function validateStep1() {
-            const brand = document.getElementById('brand').value;
-            const model = document.getElementById('model').value;
-            const storage = document.getElementById('storage').value;
-            if (brand && model && storage) {
-                goToStep(2);
-                createOptionBoxes('screenConditionContainer', screenConditions);
-            } else {
-                alert("Veuillez remplir toutes les informations.");
-            }
-        }
-
-        function createOptionBoxes(containerId, options) {
+        function populateConditionOptions(containerId, options) {
             const container = document.getElementById(containerId);
             container.innerHTML = "";
-            options.forEach((opt) => {
+            options.forEach(option => {
                 const div = document.createElement('div');
                 div.className = 'option-box';
-                div.innerHTML = `<input type="radio" name="${containerId}" value="${opt.label}"> <div><strong>${opt.label}</strong><p>${opt.desc}</p></div>`;
-                div.onclick = () => selectOption(div);
+                div.textContent = option;
+                div.onclick = () => {
+                    document.querySelectorAll(`#${containerId} .option-box`).forEach(el => el.classList.remove('selected'));
+                    div.classList.add('selected');
+                };
                 container.appendChild(div);
             });
         }
 
-        function selectOption(element) {
-            element.parentElement.querySelectorAll('.option-box').forEach(el => el.classList.remove('selected'));
-            element.classList.add('selected');
-            element.querySelector('input').checked = true;
+        function updateProgressBar(step) {
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-bar-text');
+            const percentage = (step / 5) * 100;
+            const stepLabels = ["Votre appareil", "État de l'écran", "État de la coque", "Capacité batterie", "Fonctionnalité"];
+            progressBar.style.width = percentage + '%';
+            progressText.textContent = `${step}/5 ${stepLabels[step - 1]}`;
         }
 
-        function validateStep2() {
-            if (document.querySelector('input[name="screenConditionContainer"]:checked')) {
-                goToStep(3);
-                createOptionBoxes('bodyConditionContainer', bodyConditions);
-            } else {
-                alert("Veuillez sélectionner l'état de l'écran.");
-            }
-        }
-
-        function validateStep3() {
-            if (document.querySelector('input[name="bodyConditionContainer"]:checked')) {
-                goToStep(4);
-            } else {
-                alert("Veuillez sélectionner l'état de la coque.");
-            }
+        function getSelectedOption(containerId) {
+            const selected = document.querySelector(`#${containerId} .option-box.selected`);
+            return selected ? selected.textContent : null;
         }
 
         function calculateEstimate() {
             const brand = document.getElementById('brand').value;
             const model = document.getElementById('model').value;
             const storage = document.getElementById('storage').value;
-            const functional = document.querySelector('input[name="functional"]:checked')?.value || "Non";
+            const screen = getSelectedOption('screen-conditions');
+            const body = getSelectedOption('body-conditions');
+            const battery = getSelectedOption('battery-capacity');
+            const functionality = getSelectedOption('functionality-status');
+
             let basePrice = priceConfig[brand]?.[model]?.storage?.[storage] || 0;
-            if (functional === "Non") basePrice *= 0.5;
 
-            document.getElementById('result-text').textContent = `🎉 Offre estimée : ${basePrice} € pour votre ${model} ${storage} Go.`;
-            document.getElementById('result-container').classList.add('active');
-            document.querySelectorAll('.form-container').forEach(div => div.classList.remove('active'));
-        }
-
-        function goToStep(step) {
-            document.querySelectorAll('.form-container').forEach(div => div.classList.remove('active'));
-            const stepElement = document.getElementById('step' + step);
-            if (stepElement) {
-                stepElement.classList.add('active');
-                updateProgressBar(step);
+            if (basePrice === 0) {
+                document.getElementById('result-text').textContent = "Votre appareil sera repris pour recyclage. ♻️";
+            } else {
+                basePrice -= (screen === "Cassé" ? 200 : 0);
+                basePrice -= (body === "Cassés" ? 150 : 0);
+                basePrice -= (battery === "Moins de 85%" ? 100 : 0);
+                basePrice -= (functionality === "Non fonctionnel" ? 300 : 0);
+                basePrice = basePrice < 0 ? 0 : basePrice;
+                document.getElementById('result-text').textContent = `🎉 Offre finale : ${basePrice}€ pour votre ${brand} ${model} ${storage} Go.`;
             }
-        }
-
-        function updateProgressBar(step) {
-            const progressBar = document.getElementById('progress-bar');
-            const progressText = document.getElementById('progress-bar-text');
-            const percentage = (step / 4) * 100;
-            progressBar.style.width = percentage + '%';
-            const stepLabels = ["Votre appareil", "État de l'écran", "État de la coque", "Fonctionnalité"];
-            progressText.textContent = `${step}/4 ${stepLabels[step - 1]}`;
+            document.querySelectorAll('.form-container').forEach(div => div.classList.remove('active'));
+            document.getElementById('result-container').classList.add('active');
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             populateOptions('brand', Object.keys(priceConfig));
             document.getElementById('brand').addEventListener('change', updateModelOptions);
-            document.getElementById('model').addEventListener('change', updateStorageOptions);
+            document.getElementById('model').addEventListener('change', updateStorageAndImage);
         });
+
+        function updateModelOptions() {
+            const brand = document.getElementById('brand').value;
+            if (priceConfig[brand]) {
+                populateOptions('model', Object.keys(priceConfig[brand]));
+                document.getElementById('model').disabled = false;
+            }
+            document.getElementById('device-image').src = "https://zupimages.net/up/25/08/h4r9.png";
+        }
+
+        function updateStorageAndImage() {
+            const brand = document.getElementById('brand').value;
+            const model = document.getElementById('model').value;
+            if (priceConfig[brand] && priceConfig[brand][model]) {
+                populateOptions('storage', Object.keys(priceConfig[brand][model].storage));
+                document.getElementById('storage-group').style.display = 'block';
+                document.getElementById('device-image').src = priceConfig[brand][model].image;
+            }
+        }
     </script>
 </body>
 </html>
